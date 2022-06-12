@@ -106,7 +106,7 @@ class TrainingHandler(object):
         print("Model = |", model_name, "|")
 
         model_handler = model_handler_lstm.ModelHandlerLSTM(self.settings.lstm_layers, self.settings.lstm_units, self.settings)
-        model_handler.create_model(checkpoint_optional="__saved_models/"+model_name)
+        model_handler.create_model(checkpoint_optional=model_name)
 
         try:
             print("pre-training save as a test")
