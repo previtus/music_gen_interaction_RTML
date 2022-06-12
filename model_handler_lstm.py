@@ -107,7 +107,7 @@ class ModelHandlerLSTM(object):
         self.model.load(path)
         print("finished lstm / load_model")
 
-    def create_model(self):
+    def create_model(self, checkpoint_optional=None):
         # x data (22983, 40, 1025)
         # y data (22983, 1025)
         self.input_shapes = (None, self.sequence_length, 1025)
@@ -144,8 +144,12 @@ class ModelHandlerLSTM(object):
         net = tflearn.regression(net, optimizer=self.optimiser, learning_rate=self.learning_rate,
                                  loss=self.loss_type)
 
-        #model = tflearn.DNN(net, tensorboard_verbose=1)
-        model = tflearn.DNN(net, tensorboard_verbose=3)
+        if checkpoint_optional is None:
+            model = tflearn.DNN(net, tensorboard_verbose=3)
+        else:
+            model = tflearn.DNN(net, tensorboard_verbose=3, 
+            checkpoint_path=checkpoint_optional, best_checkpoint_path=checkpoint_optional.replace(".tfl", "best.tfl"), max_checkpoints=2)
+        
 
         self.model = model
 

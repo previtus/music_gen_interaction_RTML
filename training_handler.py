@@ -81,8 +81,6 @@ class TrainingHandler(object):
         dataset, self.audio_handler = dataset_handler.make_dataset(music_file)
         print("Loaded dataset.")
 
-        model_handler = model_handler_lstm.ModelHandlerLSTM(self.settings.lstm_layers, self.settings.lstm_units, self.settings)
-        model_handler.create_model()
 
         print("Created model.")
 
@@ -107,35 +105,50 @@ class TrainingHandler(object):
 
         print("Model = |", model_name, "|")
 
+        model_handler = model_handler_lstm.ModelHandlerLSTM(self.settings.lstm_layers, self.settings.lstm_units, self.settings)
+        model_handler.create_model(checkpoint_optional="__saved_models/"+model_name)
 
-        # Train!
-        losses = []
-        monitorCallback = TrainingMonitorCallback(losses)
+        try:
+            print("pre-training save as a test")
+            model_handler.model.save(model_name.replace(".tfl","ep0empty_model_test_deleteafterwards.tfl"))
+            self.settings.save_into_txt(model_name.replace(".tfl","ep0empty_model_test_deleteafterwards.tfl"))
 
-        model_handler.model.fit(dataset.x_frames, dataset.y_frames, show_metric=True, batch_size=model_handler.batch_size,
-                                n_epoch=model_handler.amount_epochs, callbacks=[monitorCallback])
+            # Train!
+            losses = []
+            monitorCallback = TrainingMonitorCallback(losses)
 
-        # Save plot
-        print("report >>>", losses)
-        print("report >>>", monitorCallback.record)
-        self.plot_losses(monitorCallback.record, model_name)
+            model_handler.model.fit(dataset.x_frames, dataset.y_frames, show_metric=True, batch_size=model_handler.batch_size,
+                                    n_epoch=model_handler.amount_epochs, callbacks=[monitorCallback])
 
-        # Save model
-        model_handler.model.save(model_name)
+            # Save plot
+            print("report >>>", losses)
+            print("report >>>", monitorCallback.record)
+            self.plot_losses(monitorCallback.record, model_name)
 
-        # Save settings
-        self.settings.save_into_txt(model_name)
+            # Save model
+            model_handler.model.save(model_name)
 
-        print("Trained ", model_name,  "successfully ...")
-        # Save samples
-        if int(args.gensamples) > 0:
-            self.sample(model_handler, dataset, model_name, n_samples = int(args.gensamples))
+            # Save settings
+            self.settings.save_into_txt(model_name)
 
-        # cleanup!
-        del dataset
-        del model_handler.model
-        del model_handler
-        del self.audio_handler
+            print("Trained ", model_name,  "successfully ...")
+            # Save samples
+            if int(args.gensamples) > 0:
+                self.sample(model_handler, dataset, model_name, n_samples = int(args.gensamples))
+
+            # cleanup!
+            del dataset
+            del model_handler.model
+            del model_handler
+            del self.audio_handler
+        except Exception as e:
+            print("FAILED WITH AN EXCEPTION:", e)
+            backup_model_name = model_name.replace(".tfl", "backup.tfl")
+            print("Attempting a backup save as: ...", backup_model_name)
+            
+            model_handler.model.save(backup_model_name)
+            self.settings.save_into_txt(backup_model_name)
+
 
     def demo(self):
 
